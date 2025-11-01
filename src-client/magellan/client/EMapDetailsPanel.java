@@ -43,11 +43,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
@@ -994,6 +996,10 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     // luxuries
     appendRegionLuxuriesInfo(r, parent, expandableNodes);
 
+    // finances Alex Draft
+    addFinancesNode(r, parent);
+    /////////////////////////////////////////////////////
+
     // schemes
     appendRegionSchemes(r, parent, expandableNodes);
 
@@ -1088,6 +1094,42 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
       luxuriesNode.add(createSimpleNode(p.getItemType().getName() + ": "
           + getDiffString(p.getPrice(), oldPrice), "items/" + p.getItemType().getIcon()));
     }
+  }
+
+  private void addFinancesNode(Region r, DefaultMutableTreeNode parent) {
+    DefaultMutableTreeNode financesNode = createSimpleNode("Finances", "");
+    parent.add(financesNode);
+    final ItemType silverItem = r.getData().getRules().getItemType(EresseaConstants.I_RSILVER);
+    int silverAmount = r.getResource(silverItem).getAmount();
+    // r.buildings().stream().forEach(building -> {
+    // Collection<Item> maintenanceItems = building.getBuildingType().getMaintenanceItems();
+    // System.out.println(maintenanceItems);
+    // });
+    int costsOfBuildings = r.buildings().stream().map(building -> {
+      Optional<Item> silverCostsOfMaintenanceIfAny = building.getBuildingType().getMaintenanceItems()
+          .stream().filter(item -> item
+              .getItemType() == silverItem).findFirst();
+      int silverCostsForMaintenance = silverCostsOfMaintenanceIfAny.isPresent() ? silverCostsOfMaintenanceIfAny.get()
+          .getAmount() : 0;
+      return silverCostsForMaintenance;
+    }).collect(Collectors.reducing(0, (x, y) -> x
+        + y));
+
+    Integer totalUnitsSilver = r.getUnits().values().stream().map(unit -> {
+      return unit.getItems().stream().filter(item -> item
+          .getItemType() == silverItem).map(itemSilver -> itemSilver.getAmount()).findFirst().orElse(0);
+    }).collect(Collectors.reducing(0, (x, y) -> x + y));
+
+    Integer costsOfPersonal = r.getUnits().values().stream().map(unit -> unit.getPersons() * 10).collect(Collectors
+        .reducing(0, (x, y) -> x + y));
+
+    DefaultMutableTreeNode bilanceNode = createSimpleNode("Bilance: " + (totalUnitsSilver - costsOfBuildings
+        - costsOfPersonal) + " silver", "");
+    financesNode.add(bilanceNode);
+
+    bilanceNode.add(createSimpleNode("Buildings Costs: " + costsOfBuildings + " silver", ""));
+    bilanceNode.add(createSimpleNode("Units Costs: " + costsOfPersonal + " silver", ""));
+    bilanceNode.add(createSimpleNode("Units Owned Silver: " + totalUnitsSilver + " silver", ""));
   }
 
   /**
@@ -1233,6 +1275,7 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
       Collection<NodeWrapper> expandableNodes) {
     DefaultMutableTreeNode resourceNode =
         createSimpleNode(Resources.get("emapdetailspanel.node.resources"), "ressourcen");
+
     String icon = null;
     if (!r.resources().isEmpty()) {
       // resources of region
