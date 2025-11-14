@@ -1152,18 +1152,62 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
             unit2TaxationLevel).collect(Collectors
                 .reducing(0, (x, y) -> x + y * 20)));
 
+    Function<? super Unit, List<Item>> tradableItemsGetter = unit -> {
+      Collection<Item> itemMap = unit.getItems();
+      // FIXME: A bag?
+      List<Item> listOfLuxuries = itemMap == null ? Collections.emptyList() : itemMap.stream().filter(
+          item -> item.getItemType().getCategory()
+              .getID().equals(EresseaConstants.C_LUXURIES)).collect(Collectors.toList());
+      return listOfLuxuries;
+    };
+
+    Map<StringID, List<Item>> potentialTradeIncome = regionsUnits == null ? Collections
+        .<StringID, List<Item>> emptyMap() : regionsUnits
+            .values().stream()
+            .map(
+                tradableItemsGetter).flatMap(list -> list.stream()).collect(Collectors.groupingBy(itm -> itm
+                    .getItemType()
+                    .getID(),
+                    () -> new HashMap<StringID, List<Item>>(), Collectors.toList()));
+
+    final Map<StringID, LuxuryPrice> prices = r.getPrices();
+    final int maxLuxuries = r.maxLuxuries();
+
+    HashMap<StringID, Integer> luxuryPotential = new HashMap<>();
+    for (Entry<StringID, List<Item>> entry : potentialTradeIncome.entrySet()) {
+      var itemID = entry.getKey();
+      List<Item> items = entry.getValue();
+
+      int sum = 0;
+      for (Item item : items) {
+        LuxuryPrice itemPrice = prices.get(itemID);
+        sum = Math.min(maxLuxuries * itemPrice.getPrice(), item.getAmount() * itemPrice.getPrice());
+      }
+      luxuryPotential.put(itemID, sum);
+      // FIXME: Remove
+      System.out.println("Max " + sum + " for " + itemID);
+    }
+    var totalTradePotential = luxuryPotential.values().stream().collect(Collectors.reducing(0, (x, y) -> x + y));
+
     DefaultMutableTreeNode bilanceNode = createSimpleNode("Bilance: " + (potentialEntertainingIncome + totalUnitsSilver
-        + potentialTaxationIncome
-        - costsOfBuildings
-        - costsOfPersonal) + " silver", "");
+        + potentialTaxationIncome + totalTradePotential +
+        -costsOfBuildings
+        - costsOfPersonal), "");
     financesNode.add(bilanceNode);
     expandableNodes.add(new NodeWrapper(bilanceNode, "EMapDetailsPanel.RegionBilanceExpanded"));
 
-    bilanceNode.add(createSimpleNode("Buildings Upkeep: " + costsOfBuildings + " silver", ""));
-    bilanceNode.add(createSimpleNode("Units Upkeep: " + costsOfPersonal + " silver", ""));
-    bilanceNode.add(createSimpleNode("Units Owned Silver: " + totalUnitsSilver + " silver", ""));
-    bilanceNode.add(createSimpleNode("Entertainment Potential: " + potentialEntertainingIncome + " silver", ""));
-    bilanceNode.add(createSimpleNode("Taxation Potential: " + potentialTaxationIncome + " silver", ""));
+    if (costsOfBuildings > 0) {
+      bilanceNode.add(createSimpleNode("Buildings Upkeep: " + costsOfBuildings, ""));
+    }
+
+    bilanceNode.add(createSimpleNode("Units Upkeep: " + costsOfPersonal, ""));
+    bilanceNode.add(createSimpleNode("Units Owned Silver: " + totalUnitsSilver, ""));
+    bilanceNode.add(createSimpleNode("Entertainment Potential: " + potentialEntertainingIncome, ""));
+    bilanceNode.add(createSimpleNode("Taxation Potential: " + potentialTaxationIncome, ""));
+
+    if (totalTradePotential > 0) {
+      bilanceNode.add(createSimpleNode("Trade Luxury: " + totalTradePotential, ""));
+    }
   }
 
   /**
