@@ -296,7 +296,7 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
   private final StringID rtreesID = EresseaConstants.I_TREES; // StringID.create("Baeume");
   private final StringID rmallornID = EresseaConstants.I_RMALLORN; // StringID.create("Mallorn");
   private final StringID rsproutsID = EresseaConstants.I_SPROUTS; // StringID.create("Schoesslinge");
-  private final StringID rmallornSproutsID = EresseaConstants.I_MALLORNSPROUTS; // StringID.create("Mallornschösslinge");
+  private final StringID rmallornSproutsID = EresseaConstants.I_MALLORNSPROUTS; // StringID.create("Mallornschï¿½sslinge");
   private final StringID rstonesID = EresseaConstants.I_RSTONES; // StringID.create("Steine");
   private final StringID rhorsesID = EresseaConstants.I_RHORSES; // StringID.create("Pferde");
   private final StringID rsilverID = EresseaConstants.I_RSILVER; // StringID.create("Silber");
@@ -997,7 +997,7 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     appendRegionLuxuriesInfo(r, parent, expandableNodes);
 
     // finances Alex Draft
-    addFinancesNode(r, parent);
+    addFinancesNode(r, parent, expandableNodes);
     /////////////////////////////////////////////////////
 
     // schemes
@@ -1096,11 +1096,16 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     }
   }
 
-  private void addFinancesNode(Region r, DefaultMutableTreeNode parent) {
+  private void addFinancesNode(Region r, DefaultMutableTreeNode parent,
+      Collection<NodeWrapper> expandableNodes) {
+    final ItemType silverItemType = r.getData().getRules().getItemType(EresseaConstants.I_RSILVER);
+    RegionResource silverResource = r.getResource(silverItemType);
+
+    int silverAmount = silverResource != null ? silverResource.getAmount() : 0;
+
     DefaultMutableTreeNode financesNode = createSimpleNode("Finances", "");
     parent.add(financesNode);
-    final ItemType silverItem = r.getData().getRules().getItemType(EresseaConstants.I_RSILVER);
-    int silverAmount = r.getResource(silverItem).getAmount();
+    expandableNodes.add(new NodeWrapper(financesNode, "EMapDetailsPanel.RegionFinancesExpanded"));
     // r.buildings().stream().forEach(building -> {
     // Collection<Item> maintenanceItems = building.getBuildingType().getMaintenanceItems();
     // System.out.println(maintenanceItems);
@@ -1108,28 +1113,57 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     int costsOfBuildings = r.buildings().stream().map(building -> {
       Optional<Item> silverCostsOfMaintenanceIfAny = building.getBuildingType().getMaintenanceItems()
           .stream().filter(item -> item
-              .getItemType() == silverItem).findFirst();
+              .getItemType() == silverItemType).findFirst();
       int silverCostsForMaintenance = silverCostsOfMaintenanceIfAny.isPresent() ? silverCostsOfMaintenanceIfAny.get()
           .getAmount() : 0;
       return silverCostsForMaintenance;
     }).collect(Collectors.reducing(0, (x, y) -> x
         + y));
 
-    Integer totalUnitsSilver = r.getUnits().values().stream().map(unit -> {
+    Map<? extends ID, Unit> regionsUnits = r.getUnits();
+    Integer totalUnitsSilver = regionsUnits == null ? 0 : regionsUnits.values().stream().map(unit -> {
       return unit.getItems().stream().filter(item -> item
-          .getItemType() == silverItem).map(itemSilver -> itemSilver.getAmount()).findFirst().orElse(0);
+          .getItemType() == silverItemType).map(itemSilver -> itemSilver.getAmount()).findFirst().orElse(0);
     }).collect(Collectors.reducing(0, (x, y) -> x + y));
 
-    Integer costsOfPersonal = r.getUnits().values().stream().map(unit -> unit.getPersons() * 10).collect(Collectors
-        .reducing(0, (x, y) -> x + y));
+    Integer costsOfPersonal = regionsUnits == null ? 0 : regionsUnits.values().stream().map(unit -> unit.getPersons()
+        * 10).collect(Collectors
+            .reducing(0, (x, y) -> x + y));
 
-    DefaultMutableTreeNode bilanceNode = createSimpleNode("Bilance: " + (totalUnitsSilver - costsOfBuildings
+    Function<? super Unit, Integer> unit2EntertainmentLevel = unit -> {
+      Map<StringID, Skill> skillMap = unit
+          .getSkillMap();
+      Skill entertainmentSkill = skillMap == null ? null : skillMap.get(EresseaConstants.S_UNTERHALTUNG);
+      return unit.getPersons() * (entertainmentSkill == null ? 0 : entertainmentSkill.getLevel());
+    };
+    Integer potentialEntertainingIncome = Math.min(silverAmount, regionsUnits == null ? 0 : regionsUnits.values()
+        .stream().map(
+            unit2EntertainmentLevel).collect(Collectors
+                .reducing(0, (x, y) -> x + y * 20)));
+
+    Function<? super Unit, Integer> unit2TaxationLevel = unit -> {
+      Map<StringID, Skill> skillMap = unit
+          .getSkillMap();
+      Skill entertainmentSkill = skillMap == null ? null : skillMap.get(EresseaConstants.S_STEUEREINTREIBEN);
+      return unit.getPersons() * (entertainmentSkill == null ? 0 : entertainmentSkill.getLevel());
+    };
+    Integer potentialTaxationIncome = Math.min(silverAmount, regionsUnits == null ? 0 : regionsUnits.values().stream()
+        .map(
+            unit2TaxationLevel).collect(Collectors
+                .reducing(0, (x, y) -> x + y * 20)));
+
+    DefaultMutableTreeNode bilanceNode = createSimpleNode("Bilance: " + (potentialEntertainingIncome + totalUnitsSilver
+        + potentialTaxationIncome
+        - costsOfBuildings
         - costsOfPersonal) + " silver", "");
     financesNode.add(bilanceNode);
+    expandableNodes.add(new NodeWrapper(bilanceNode, "EMapDetailsPanel.RegionBilanceExpanded"));
 
-    bilanceNode.add(createSimpleNode("Buildings Costs: " + costsOfBuildings + " silver", ""));
-    bilanceNode.add(createSimpleNode("Units Costs: " + costsOfPersonal + " silver", ""));
+    bilanceNode.add(createSimpleNode("Buildings Upkeep: " + costsOfBuildings + " silver", ""));
+    bilanceNode.add(createSimpleNode("Units Upkeep: " + costsOfPersonal + " silver", ""));
     bilanceNode.add(createSimpleNode("Units Owned Silver: " + totalUnitsSilver + " silver", ""));
+    bilanceNode.add(createSimpleNode("Entertainment Potential: " + potentialEntertainingIncome + " silver", ""));
+    bilanceNode.add(createSimpleNode("Taxation Potential: " + potentialTaxationIncome + " silver", ""));
   }
 
   /**
@@ -1782,7 +1816,7 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     ArrayList<String> icons = new ArrayList<String>();
     icons.add(icon);
 
-    // Aktualitätsinfo
+    // Aktualitï¿½tsinfo
 
     if (res.getDate() != null && res.getDate().getDate() > -1) {
       if (res.getDate().equals(getGameData().getDate())) {
@@ -4049,8 +4083,8 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
         n.add(m);
       }
 
-      // maxGröße (bzw bei Burgen Min-Max)
-      // Bei Zitadelle: keine max oder min Größenangabe..(kein maxSize verfügbar)
+      // maxGrï¿½ï¿½e (bzw bei Burgen Min-Max)
+      // Bei Zitadelle: keine max oder min Grï¿½ï¿½enangabe..(kein maxSize verfï¿½gbar)
       if (maxSize >= 0) {
         if (minSize >= 0) {
           m =
@@ -4091,9 +4125,9 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
         String text = i.getName();
 
         DefaultMutableTreeNode m;
-        if (text.endsWith(" pro Größenpunkt")) {
+        if (text.endsWith(" pro Grï¿½ï¿½enpunkt")) {
           int amount = b.getSize() * i.getAmount();
-          String newText = text.substring(0, text.indexOf(" pro Größenpunkt"));
+          String newText = text.substring(0, text.indexOf(" pro Grï¿½ï¿½enpunkt"));
           m =
               new DefaultMutableTreeNode(nodeWrapperFactory.createSimpleNodeWrapper(amount + " "
                   + newText, "items/" + getGameData().getRules().getItemType(newText)));
@@ -4533,7 +4567,7 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
         new DefaultMutableTreeNode(nodeWrapperFactory.createSimpleNodeWrapper(text, "crew"));
     parent.add(n);
 
-    // Bei Konvois: Anzahl der Personen beim Kapitän >= Anzahl der Schiffe
+    // Bei Konvois: Anzahl der Personen beim Kapitï¿½n >= Anzahl der Schiffe
     if (s.getAmount() > 1) {
       int captainPersons = magellan.library.utils.Units.getCaptainPersons(s), modCaptainPersons =
           magellan.library.utils.Units.getModifiedCaptainPersons(s);
