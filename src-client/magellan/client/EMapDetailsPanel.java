@@ -1098,14 +1098,14 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
 
   private void addFinancesNode(Region r, DefaultMutableTreeNode parent,
       Collection<NodeWrapper> expandableNodes) {
+    DefaultMutableTreeNode financesNode = createSimpleNode("Finances", "");
+    parent.add(financesNode);
+
     final ItemType silverItemType = r.getData().getRules().getItemType(EresseaConstants.I_RSILVER);
     RegionResource silverResource = r.getResource(silverItemType);
 
     int silverAmount = silverResource != null ? silverResource.getAmount() : 0;
 
-    DefaultMutableTreeNode financesNode = createSimpleNode("Finances", "");
-    parent.add(financesNode);
-    expandableNodes.add(new NodeWrapper(financesNode, "EMapDetailsPanel.RegionFinancesExpanded"));
     // r.buildings().stream().forEach(building -> {
     // Collection<Item> maintenanceItems = building.getBuildingType().getMaintenanceItems();
     // System.out.println(maintenanceItems);
@@ -1154,9 +1154,17 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
 
     Function<? super Unit, List<Item>> tradableItemsGetter = unit -> {
       Collection<Item> itemMap = unit.getItems();
-      // FIXME: A bag?
+
+      //////// Debug code
+      List<Item> listOfStrangeItems = itemMap == null ? Collections.emptyList() : itemMap.stream().filter(
+          item -> item.getItemType() == null || item.getItemType().getCategory() == null).collect(Collectors.toList());
+      if (listOfStrangeItems == null || !listOfStrangeItems.isEmpty()) {
+        System.out.println(listOfStrangeItems);
+      }
+      // FIXME: A bag ? What is an item without an item type? Schaumkrone 1424
       List<Item> listOfLuxuries = itemMap == null ? Collections.emptyList() : itemMap.stream().filter(
-          item -> item.getItemType().getCategory()
+          item -> item.getItemType() != null && item.getItemType().getCategory() != null && item.getItemType()
+              .getCategory()
               .getID().equals(EresseaConstants.C_LUXURIES)).collect(Collectors.toList());
       return listOfLuxuries;
     };
@@ -1194,7 +1202,6 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
         -costsOfBuildings
         - costsOfPersonal), "");
     financesNode.add(bilanceNode);
-    expandableNodes.add(new NodeWrapper(bilanceNode, "EMapDetailsPanel.RegionBilanceExpanded"));
 
     if (costsOfBuildings > 0) {
       bilanceNode.add(createSimpleNode("Buildings Upkeep: " + costsOfBuildings, ""));
@@ -1208,6 +1215,9 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     if (totalTradePotential > 0) {
       bilanceNode.add(createSimpleNode("Trade Luxury: " + totalTradePotential, ""));
     }
+
+    expandableNodes.add(new NodeWrapper(financesNode, "EMapDetailsPanel.RegionFinancesExpanded"));
+    expandableNodes.add(new NodeWrapper(financesNode.getNextNode(), "EMapDetailsPanel.RegionBilanceExpanded"));
   }
 
   /**
