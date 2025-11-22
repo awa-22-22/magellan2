@@ -1098,8 +1098,6 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
 
   private void addFinancesNode(Region r, DefaultMutableTreeNode parent,
       Collection<NodeWrapper> expandableNodes) {
-    DefaultMutableTreeNode financesNode = createSimpleNode("Finances", "");
-    parent.add(financesNode);
 
     final ItemType silverItemType = r.getData().getRules().getItemType(EresseaConstants.I_RSILVER);
     RegionResource silverResource = r.getResource(silverItemType);
@@ -1197,27 +1195,39 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     }
     var totalTradePotential = luxuryPotential.values().stream().collect(Collectors.reducing(0, (x, y) -> x + y));
 
-    DefaultMutableTreeNode bilanceNode = createSimpleNode("Bilance: " + (potentialEntertainingIncome + totalUnitsSilver
-        + potentialTaxationIncome + totalTradePotential +
-        -costsOfBuildings
-        - costsOfPersonal), "");
-    financesNode.add(bilanceNode);
+    int expensesSum = costsOfBuildings
+        + costsOfPersonal;
+    int incomeSum = potentialEntertainingIncome + totalUnitsSilver
+        + potentialTaxationIncome + totalTradePotential;
+
+    DefaultMutableTreeNode financesNode = createSimpleNode("Finances: " + (incomeSum - expensesSum), "items/silber");
+    parent.add(financesNode);
+
+    DefaultMutableTreeNode incomeNode = createSimpleNode("Income: " + incomeSum, "items/silber");
+    financesNode.add(incomeNode);
+    DefaultMutableTreeNode expensesNode = createSimpleNode("Expenses: " +
+        expensesSum, "items/silber");
+    financesNode.add(expensesNode);
 
     if (costsOfBuildings > 0) {
-      bilanceNode.add(createSimpleNode("Buildings Upkeep: " + costsOfBuildings, ""));
+      incomeNode.add(createSimpleNode("Buildings Upkeep: " + costsOfBuildings, "items/silber"));
     }
 
-    bilanceNode.add(createSimpleNode("Units Upkeep: " + costsOfPersonal, ""));
-    bilanceNode.add(createSimpleNode("Units Owned Silver: " + totalUnitsSilver, ""));
-    bilanceNode.add(createSimpleNode("Entertainment Potential: " + potentialEntertainingIncome, ""));
-    bilanceNode.add(createSimpleNode("Taxation Potential: " + potentialTaxationIncome, ""));
-
+    expensesNode.add(createSimpleNode("Units Upkeep: " + costsOfPersonal, "items/silber"));
+    expensesNode.add(createSimpleNode("Units Owned Silver: " + totalUnitsSilver, "items/silber"));
+    // TODO: Check on null?
+    incomeNode.add(createSimpleNode("Entertainment Potential: " + potentialEntertainingIncome, getGameData().getRules()
+        .getSkillType(EresseaConstants.S_UNTERHALTUNG).getIcon()));
+    incomeNode.add(createSimpleNode("Taxation Potential: " + potentialTaxationIncome, getGameData().getRules()
+        .getSkillType(EresseaConstants.S_STEUEREINTREIBEN).getIcon()));
     if (totalTradePotential > 0) {
-      bilanceNode.add(createSimpleNode("Trade Luxury: " + totalTradePotential, ""));
+      incomeNode.add(createSimpleNode("Trade Luxury: " + totalTradePotential, getGameData().getRules()
+          .getSkillType(EresseaConstants.S_HANDELN).getIcon()));
     }
 
     expandableNodes.add(new NodeWrapper(financesNode, "EMapDetailsPanel.RegionFinancesExpanded"));
-    expandableNodes.add(new NodeWrapper(financesNode.getNextNode(), "EMapDetailsPanel.RegionBilanceExpanded"));
+    expandableNodes.add(new NodeWrapper(incomeNode, "EMapDetailsPanel.RegionIncomeExpanded"));
+    expandableNodes.add(new NodeWrapper(expensesNode, "EMapDetailsPanel.RegionExpensesExpanded"));
   }
 
   /**
