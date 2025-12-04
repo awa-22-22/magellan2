@@ -1134,7 +1134,7 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
       Skill entertainmentSkill = skillMap == null ? null : skillMap.get(EresseaConstants.S_UNTERHALTUNG);
       return unit.getPersons() * (entertainmentSkill == null ? 0 : entertainmentSkill.getLevel());
     };
-    Integer potentialEntertainingIncome = Math.min(silverAmount, regionsUnits == null ? 0 : regionsUnits.values()
+    Integer potentialEntertainingIncome = Math.min(silverAmount/20, regionsUnits == null ? 0 : regionsUnits.values()
         .stream().map(
             unit2EntertainmentLevel).collect(Collectors
                 .reducing(0, (x, y) -> x + y * 20)));
