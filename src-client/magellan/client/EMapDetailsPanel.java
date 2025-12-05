@@ -1197,32 +1197,41 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
 
     int expensesSum = costsOfBuildings
         + costsOfPersonal;
-    int incomeSum = potentialEntertainingIncome + totalUnitsSilver
+    int incomeSum = potentialEntertainingIncome
         + potentialTaxationIncome + totalTradePotential;
 
-    DefaultMutableTreeNode financesNode = createSimpleNode("Finances: " + (incomeSum - expensesSum), "items/silber");
+    DefaultMutableTreeNode financesNode = createSimpleNode(Resources.get("emapdetailspanel.node.finances",
+        totalUnitsSilver + incomeSum
+            - expensesSum), "items/silber");
     parent.add(financesNode);
 
-    financesNode.add(createSimpleNode("Units Owned Silver: " + totalUnitsSilver, "items/silber"));
-    DefaultMutableTreeNode incomeNode = createSimpleNode("Income: " + incomeSum, "items/silber");
+    financesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.unitsowned.silver", totalUnitsSilver),
+        "items/silber"));
+    DefaultMutableTreeNode incomeNode = createSimpleNode(Resources.get("emapdetailspanel.node.income", incomeSum),
+        "items/silber");
     financesNode.add(incomeNode);
-    DefaultMutableTreeNode expensesNode = createSimpleNode("Expenses: " +
-        expensesSum, "items/silber");
+    DefaultMutableTreeNode expensesNode = createSimpleNode(Resources.get("emapdetailspanel.node.expenses",
+        expensesSum), "items/silber");
     financesNode.add(expensesNode);
 
     if (costsOfBuildings > 0) {
-      incomeNode.add(createSimpleNode("Buildings Upkeep: " + costsOfBuildings, "items/silber"));
+      expensesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.buildings.upkeep", costsOfBuildings),
+          "items/silber"));
     }
 
-    expensesNode.add(createSimpleNode("Units Upkeep: " + costsOfPersonal, "items/silber"));
+    expensesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.units.upkeep", costsOfPersonal),
+        "items/silber"));
     // TODO: Check on null?
-    incomeNode.add(createSimpleNode("Entertainment Potential: " + potentialEntertainingIncome, getGameData().getRules()
-        .getSkillType(EresseaConstants.S_UNTERHALTUNG).getIcon()));
-    incomeNode.add(createSimpleNode("Taxation Potential: " + potentialTaxationIncome, getGameData().getRules()
-        .getSkillType(EresseaConstants.S_STEUEREINTREIBEN).getIcon()));
+    incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.entertainment.potential",
+        potentialEntertainingIncome), getGameData().getRules()
+            .getSkillType(EresseaConstants.S_UNTERHALTUNG).getIcon()));
+    incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.taxation.potential", potentialTaxationIncome),
+        getGameData().getRules()
+            .getSkillType(EresseaConstants.S_STEUEREINTREIBEN).getIcon()));
     if (totalTradePotential > 0) {
-      incomeNode.add(createSimpleNode("Trade Luxury: " + totalTradePotential, getGameData().getRules()
-          .getSkillType(EresseaConstants.S_HANDELN).getIcon()));
+      incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.trade.luxury", totalTradePotential),
+          getGameData().getRules()
+              .getSkillType(EresseaConstants.S_HANDELN).getIcon()));
     }
 
     expandableNodes.add(new NodeWrapper(financesNode, "EMapDetailsPanel.RegionFinancesExpanded"));
