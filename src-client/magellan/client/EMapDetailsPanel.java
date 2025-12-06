@@ -47,6 +47,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1096,147 +1097,220 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     }
   }
 
-  private void addFinancesNode(Region r, DefaultMutableTreeNode parent,
-      Collection<NodeWrapper> expandableNodes) {
+  /**
+   * Calculates financial data for a specific faction in a region.
+   *
+   * @param faction the faction
+   * @param region the region
+   * @return RegionFactionFinances with calculated data
+   */
+  private RegionFactionFinances calculateFactionFinances(Faction faction, Region region) {
+    RegionFactionFinances finances = new RegionFactionFinances();
 
-    final ItemType silverItemType = r.getData().getRules().getItemType(EresseaConstants.I_RSILVER);
-    RegionResource silverResource = r.getResource(silverItemType);
+    final ItemType silverItemType = region.getData().getRules().getItemType(EresseaConstants.I_RSILVER);
+    RegionResource silverResource = region.getResource(silverItemType);
+    finances.silverAmount = silverResource != null ? silverResource.getAmount() : 0;
 
-    int silverAmount = silverResource != null ? silverResource.getAmount() : 0;
+    // Buildings owned by this faction
+    finances.costsOfBuildings = region.buildings().stream()
+        .filter(building -> building.getOwnerUnit() != null && building.getOwnerUnit().getFaction().equals(faction))
+        .map(building -> {
+          Optional<Item> silverCostsOfMaintenanceIfAny = building.getBuildingType().getMaintenanceItems()
+              .stream().filter(item -> item.getItemType() == silverItemType).findFirst();
+          return silverCostsOfMaintenanceIfAny.isPresent() ? silverCostsOfMaintenanceIfAny.get().getAmount() : 0;
+        }).collect(Collectors.reducing(0, (x, y) -> x + y));
 
-    // r.buildings().stream().forEach(building -> {
-    // Collection<Item> maintenanceItems = building.getBuildingType().getMaintenanceItems();
-    // System.out.println(maintenanceItems);
-    // });
-    int costsOfBuildings = r.buildings().stream().map(building -> {
-      Optional<Item> silverCostsOfMaintenanceIfAny = building.getBuildingType().getMaintenanceItems()
-          .stream().filter(item -> item
-              .getItemType() == silverItemType).findFirst();
-      int silverCostsForMaintenance = silverCostsOfMaintenanceIfAny.isPresent() ? silverCostsOfMaintenanceIfAny.get()
-          .getAmount() : 0;
-      return silverCostsForMaintenance;
-    }).collect(Collectors.reducing(0, (x, y) -> x
-        + y));
+    // Units of this faction in the region
+    Collection<Unit> factionUnits = region.getUnits() != null ? region.getUnits().values().stream()
+        .filter(unit -> unit.getFaction().equals(faction)).collect(Collectors.toList()) : Collections.emptyList();
 
-    Map<? extends ID, Unit> regionsUnits = r.getUnits();
-    Integer totalUnitsSilver = regionsUnits == null ? 0 : regionsUnits.values().stream().map(unit -> {
-      return unit.getItems().stream().filter(item -> item
-          .getItemType() == silverItemType).map(itemSilver -> itemSilver.getAmount()).findFirst().orElse(0);
+    finances.totalUnitsSilver = factionUnits.stream().map(unit -> {
+      return unit.getItems().stream().filter(item -> item.getItemType() == silverItemType)
+          .map(itemSilver -> itemSilver.getAmount()).findFirst().orElse(0);
     }).collect(Collectors.reducing(0, (x, y) -> x + y));
 
-    Integer costsOfPersonal = regionsUnits == null ? 0 : regionsUnits.values().stream().map(unit -> unit.getPersons()
-        * 10).collect(Collectors
-            .reducing(0, (x, y) -> x + y));
+    finances.costsOfPersonal = factionUnits.stream().map(unit -> unit.getPersons() * 10)
+        .collect(Collectors.reducing(0, (x, y) -> x + y));
 
     Function<? super Unit, Integer> unit2EntertainmentLevel = unit -> {
-      Map<StringID, Skill> skillMap = unit
-          .getSkillMap();
+      Map<StringID, Skill> skillMap = unit.getSkillMap();
       Skill entertainmentSkill = skillMap == null ? null : skillMap.get(EresseaConstants.S_UNTERHALTUNG);
       return unit.getPersons() * (entertainmentSkill == null ? 0 : entertainmentSkill.getLevel());
     };
-    Integer potentialEntertainingIncome = Math.min(silverAmount / 20, regionsUnits == null ? 0 : regionsUnits.values()
-        .stream().map(
-            unit2EntertainmentLevel).collect(Collectors
-                .reducing(0, (x, y) -> x + y * 20)));
+    int totalEntertainmentPotential = factionUnits.stream().map(unit2EntertainmentLevel)
+        .collect(Collectors.reducing(0, (x, y) -> x + y * 20));
+    finances.potentialEntertainingIncome = Math.min(finances.silverAmount / 20, totalEntertainmentPotential);
 
     Function<? super Unit, Integer> unit2TaxationLevel = unit -> {
-      Map<StringID, Skill> skillMap = unit
-          .getSkillMap();
-      Skill entertainmentSkill = skillMap == null ? null : skillMap.get(EresseaConstants.S_STEUEREINTREIBEN);
-      return unit.getPersons() * (entertainmentSkill == null ? 0 : entertainmentSkill.getLevel());
+      Map<StringID, Skill> skillMap = unit.getSkillMap();
+      Skill taxationSkill = skillMap == null ? null : skillMap.get(EresseaConstants.S_STEUEREINTREIBEN);
+      return unit.getPersons() * (taxationSkill == null ? 0 : taxationSkill.getLevel());
     };
-    Integer potentialTaxationIncome = Math.min(silverAmount, regionsUnits == null ? 0 : regionsUnits.values().stream()
-        .map(
-            unit2TaxationLevel).collect(Collectors
-                .reducing(0, (x, y) -> x + y * 20)));
+    int totalTaxationPotential = factionUnits.stream().map(unit2TaxationLevel)
+        .collect(Collectors.reducing(0, (x, y) -> x + y * 20));
+    finances.potentialTaxationIncome = Math.min(finances.silverAmount, totalTaxationPotential);
 
     Function<? super Unit, List<Item>> tradableItemsGetter = unit -> {
       Collection<Item> itemMap = unit.getItems();
-
-      //////// Debug code
-      List<Item> listOfStrangeItems = itemMap == null ? Collections.emptyList() : itemMap.stream().filter(
-          item -> item.getItemType() == null || item.getItemType().getCategory() == null).collect(Collectors.toList());
-      if (listOfStrangeItems == null || !listOfStrangeItems.isEmpty()) {
-        System.out.println(listOfStrangeItems);
-      }
-      // FIXME: A bag ? What is an item without an item type? Schaumkrone 1424
       List<Item> listOfLuxuries = itemMap == null ? Collections.emptyList() : itemMap.stream().filter(
           item -> item.getItemType() != null && item.getItemType().getCategory() != null && item.getItemType()
-              .getCategory()
-              .getID().equals(EresseaConstants.C_LUXURIES)).collect(Collectors.toList());
+              .getCategory().getID().equals(EresseaConstants.C_LUXURIES)).collect(Collectors.toList());
       return listOfLuxuries;
     };
 
-    Map<StringID, List<Item>> potentialTradeIncome = regionsUnits == null ? Collections
-        .<StringID, List<Item>> emptyMap() : regionsUnits
-            .values().stream()
-            .map(
-                tradableItemsGetter).flatMap(list -> list.stream()).collect(Collectors.groupingBy(itm -> itm
-                    .getItemType()
-                    .getID(),
-                    () -> new HashMap<StringID, List<Item>>(), Collectors.toList()));
+    // //////// Debug code
+    // List<Item> listOfStrangeItems = itemMap == null ? Collections.emptyList() : itemMap.stream().filter(
+    // item -> item.getItemType() == null || item.getItemType().getCategory() == null).collect(Collectors.toList());
+    // if (listOfStrangeItems == null || !listOfStrangeItems.isEmpty()) {
+    // System.out.println(listOfStrangeItems);
+    // }
+    // ///////////////////////
+    Map<StringID, List<Item>> tradableItemsMap = factionUnits.stream()
+        .map(tradableItemsGetter).flatMap(list -> list.stream()).collect(Collectors.groupingBy(itm -> itm
+            .getItemType().getID(), () -> new HashMap<StringID, List<Item>>(), Collectors.toList()));
 
-    final Map<StringID, LuxuryPrice> prices = r.getPrices();
-    final int maxLuxuries = r.maxLuxuries();
+    final Map<StringID, LuxuryPrice> prices = region.getPrices();
+    final int maxLuxuries = region.maxLuxuries();
 
-    HashMap<StringID, Integer> luxuryPotential = new HashMap<>();
-    for (Entry<StringID, List<Item>> entry : potentialTradeIncome.entrySet()) {
-      var itemID = entry.getKey();
+    finances.totalTradePotential = tradableItemsMap.entrySet().stream().map(entry -> {
+      StringID itemID = entry.getKey();
       List<Item> items = entry.getValue();
-
       int sum = 0;
       for (Item item : items) {
         LuxuryPrice itemPrice = prices.get(itemID);
-        sum = Math.min(maxLuxuries * itemPrice.getPrice(), item.getAmount() * itemPrice.getPrice());
+        if (itemPrice != null && itemPrice.getPrice() > 0) {
+          sum = Math.min(maxLuxuries * itemPrice.getPrice(), item.getAmount() * itemPrice.getPrice());
+        }
       }
-      luxuryPotential.put(itemID, sum);
-      // FIXME: Remove
-      System.out.println("Max " + sum + " for " + itemID);
+      return sum;
+    }).collect(Collectors.reducing(0, (x, y) -> x + y));
+
+    finances.expensesSum = finances.costsOfBuildings + finances.costsOfPersonal;
+    finances.incomeSum = finances.potentialEntertainingIncome + finances.potentialTaxationIncome
+        + finances.totalTradePotential;
+    finances.netFinances = finances.totalUnitsSilver + finances.incomeSum - finances.expensesSum;
+
+    return finances;
+  }
+
+  private void addFinancesNode(Region r, DefaultMutableTreeNode parent,
+      Collection<NodeWrapper> expandableNodes) {
+
+    try {
+      // Get all factions in the region and their data
+      TreeMap<Faction, RegionFactionFinances> factions = new TreeMap<Faction, RegionFactionFinances>((faction1,
+          faction2) -> faction1.getName().compareTo(faction2.getName()));
+      if (r.getUnits() != null) {
+        for (Unit unit : r.getUnits().values()) {
+          factions.put(unit.getFaction(), calculateFactionFinances(unit.getFaction(), r));
+        }
+      }
+
+      // Calculate overall trade limit
+      Map<StringID, Integer> totalTradeAmounts = new HashMap<>();
+      for (Faction faction : factions.keySet()) {
+        Collection<Unit> factionUnits = r.getUnits() != null ? r.getUnits().values().stream()
+            .filter(unit -> unit.getFaction().equals(faction)).collect(Collectors.toList()) : Collections.emptyList();
+        for (Unit unit : factionUnits) {
+          Collection<Item> items = unit.getItems();
+          if (items != null) {
+            for (Item item : items) {
+              if (item.getItemType().getCategory() != null && item.getItemType().getCategory().getID().equals(
+                  EresseaConstants.C_LUXURIES)) {
+                totalTradeAmounts.merge(item.getItemType().getID(), item.getAmount(), Integer::sum);
+              }
+            }
+          }
+        }
+      }
+      int overallTradePotential = 0;
+      final Map<StringID, LuxuryPrice> prices = r.getPrices();
+      final int maxLuxuries = r.maxLuxuries();
+      for (Entry<StringID, Integer> entry : totalTradeAmounts.entrySet()) {
+        LuxuryPrice price = prices.get(entry.getKey());
+        if (price != null && price.getPrice() > 0) {
+          overallTradePotential += Math.min(maxLuxuries * price.getPrice(), entry.getValue() * price.getPrice());
+        }
+      }
+
+      // Calculate overall incomes with limits
+      int overallTaxationIncome = Math.min(r.getSilver(), factions.values().stream().mapToInt(
+          f -> f.potentialTaxationIncome).sum());
+      int overallEntertainmentIncome = Math.min(r.getSilver() / 20, factions.values().stream().mapToInt(
+          f -> f.potentialEntertainingIncome).sum());
+
+      // Calculate overall sum: distributed silver + overall incomes - upkeep costs
+      int totalDistributedSilver = factions.values().stream().mapToInt(f -> f.totalUnitsSilver).sum();
+      int totalUpkeepCosts = factions.values().stream().mapToInt(f -> f.expensesSum).sum();
+      Integer overallSum = totalDistributedSilver + overallTaxationIncome + overallEntertainmentIncome
+          + overallTradePotential - totalUpkeepCosts;
+
+      DefaultMutableTreeNode financesNode = createSimpleNode(Resources.get("emapdetailspanel.node.finances",
+          overallSum),
+          "items/silber");
+      parent.add(financesNode);
+
+      for (Entry<Faction, RegionFactionFinances> factionData : factions.entrySet()) {
+        RegionFactionFinances fin = factionData.getValue();
+
+        String raceIcon = factionData.getKey().getRace() != null ? factionData.getKey().getRace().getIcon()
+            : "items/silber";
+        DefaultMutableTreeNode factionNode = createSimpleNode(String.format("%1$s: %2$d", factionData.getKey(),
+            fin.netFinances),
+            raceIcon);
+        financesNode.add(factionNode);
+
+        if (fin.totalUnitsSilver > 0) {
+          factionNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.unitsowned.silver",
+              fin.totalUnitsSilver),
+              "items/silber"));
+        }
+
+        if (fin.incomeSum > 0) {
+          DefaultMutableTreeNode incomeNode = createSimpleNode(Resources.get("emapdetailspanel.node.income",
+              fin.incomeSum),
+              "items/silber");
+          factionNode.add(incomeNode);
+
+          if (fin.potentialEntertainingIncome > 0) {
+            incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.entertainment.potential",
+                fin.potentialEntertainingIncome),
+                getGameData().getRules().getSkillType(EresseaConstants.S_UNTERHALTUNG).getIcon()));
+          }
+          if (fin.potentialTaxationIncome > 0) {
+            incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.taxation.potential",
+                fin.potentialTaxationIncome),
+                getGameData().getRules().getSkillType(EresseaConstants.S_STEUEREINTREIBEN).getIcon()));
+          }
+          if (fin.totalTradePotential > 0) {
+            incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.trade.luxury",
+                fin.totalTradePotential),
+                getGameData().getRules().getSkillType(EresseaConstants.S_HANDELN).getIcon()));
+          }
+        }
+
+        if (fin.expensesSum > 0) {
+          DefaultMutableTreeNode expensesNode = createSimpleNode(Resources.get("emapdetailspanel.node.expenses",
+              fin.expensesSum), "items/silber");
+          factionNode.add(expensesNode);
+          if (fin.costsOfBuildings > 0) {
+            expensesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.buildings.upkeep",
+                fin.costsOfBuildings),
+                "items/silber"));
+          }
+
+          if (fin.costsOfPersonal > 0) {
+            expensesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.units.upkeep", fin.costsOfPersonal),
+                "items/silber"));
+          }
+        }
+
+      }
+
+      expandableNodes.add(new NodeWrapper(financesNode, "EMapDetailsPanel.RegionFinancesExpanded"));
+    } catch (Exception e) {
+      log.error(e, e);
     }
-    var totalTradePotential = luxuryPotential.values().stream().collect(Collectors.reducing(0, (x, y) -> x + y));
-
-    int expensesSum = costsOfBuildings
-        + costsOfPersonal;
-    int incomeSum = potentialEntertainingIncome
-        + potentialTaxationIncome + totalTradePotential;
-
-    DefaultMutableTreeNode financesNode = createSimpleNode(Resources.get("emapdetailspanel.node.finances",
-        totalUnitsSilver + incomeSum
-            - expensesSum), "items/silber");
-    parent.add(financesNode);
-
-    financesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.unitsowned.silver", totalUnitsSilver),
-        "items/silber"));
-    DefaultMutableTreeNode incomeNode = createSimpleNode(Resources.get("emapdetailspanel.node.income", incomeSum),
-        "items/silber");
-    financesNode.add(incomeNode);
-    DefaultMutableTreeNode expensesNode = createSimpleNode(Resources.get("emapdetailspanel.node.expenses",
-        expensesSum), "items/silber");
-    financesNode.add(expensesNode);
-
-    if (costsOfBuildings > 0) {
-      expensesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.buildings.upkeep", costsOfBuildings),
-          "items/silber"));
-    }
-
-    expensesNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.units.upkeep", costsOfPersonal),
-        "items/silber"));
-    // TODO: Check on null?
-    incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.entertainment.potential",
-        potentialEntertainingIncome), getGameData().getRules()
-            .getSkillType(EresseaConstants.S_UNTERHALTUNG).getIcon()));
-    incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.taxation.potential", potentialTaxationIncome),
-        getGameData().getRules()
-            .getSkillType(EresseaConstants.S_STEUEREINTREIBEN).getIcon()));
-    if (totalTradePotential > 0) {
-      incomeNode.add(createSimpleNode(Resources.get("emapdetailspanel.node.trade.luxury", totalTradePotential),
-          getGameData().getRules()
-              .getSkillType(EresseaConstants.S_HANDELN).getIcon()));
-    }
-
-    expandableNodes.add(new NodeWrapper(financesNode, "EMapDetailsPanel.RegionFinancesExpanded"));
-    expandableNodes.add(new NodeWrapper(incomeNode, "EMapDetailsPanel.RegionIncomeExpanded"));
-    expandableNodes.add(new NodeWrapper(expensesNode, "EMapDetailsPanel.RegionExpensesExpanded"));
   }
 
   /**
@@ -6731,6 +6805,22 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
     int amount = 0;
     int amount_modified = 0;
     String raceNoPrefix = null;
+  }
+
+  /**
+   * Record for financial data per faction in a region.
+   */
+  private static class RegionFactionFinances {
+    int silverAmount;
+    int costsOfBuildings;
+    int totalUnitsSilver;
+    int costsOfPersonal;
+    int potentialEntertainingIncome;
+    int potentialTaxationIncome;
+    int totalTradePotential;
+    int expensesSum;
+    int incomeSum;
+    int netFinances;
   }
 
   /**
