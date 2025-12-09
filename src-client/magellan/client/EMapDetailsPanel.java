@@ -1113,7 +1113,11 @@ public class EMapDetailsPanel extends InternationalizedDataPanel implements Sele
 
     // Buildings owned by this faction
     finances.costsOfBuildings = region.buildings().stream()
-        .filter(building -> building.getOwnerUnit() != null && building.getOwnerUnit().getFaction().equals(faction))
+        .filter(building -> {
+          Unit maintainer = region.getData().getGameSpecificRules().getMaintainer(building);
+          return maintainer != null && maintainer.getFaction().equals(
+              faction);
+        })
         .map(building -> {
           Optional<Item> silverCostsOfMaintenanceIfAny = building.getBuildingType().getMaintenanceItems()
               .stream().filter(item -> item.getItemType() == silverItemType).findFirst();
