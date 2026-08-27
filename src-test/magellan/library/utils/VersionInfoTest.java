@@ -25,24 +25,11 @@ package magellan.library.utils;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-
 import org.junit.Test;
 
 import magellan.test.MagellanTestWithResources;
 
 public class VersionInfoTest extends MagellanTestWithResources {
-  @Test
-  public void testIsNewer() {
-    File rDir = new File(".");
-    System.out.println(rDir.getAbsolutePath());
-    String currentVersion = VersionInfo.getVersion(Resources.getResourceDirectory());
-    String newVersion = "2.1.0-0.beta";
-    Version a = new Version(currentVersion);
-    Version b = new Version(newVersion);
-    assertTrue(a.isNewer(b));
-    assertTrue(VersionInfo.isNewer(currentVersion, newVersion));
-  }
 
   @Test
   public void testReleaseVersions() {

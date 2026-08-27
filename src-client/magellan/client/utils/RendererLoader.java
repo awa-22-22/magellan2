@@ -150,6 +150,12 @@ public class RendererLoader extends Object {
                     }
                   }
                 } catch (ClassNotFoundException cnfe) {
+                } catch (LinkageError le) {
+                  // the class is incompatible with the current classpath (e.g. compiled against
+                  // another version of a library); skip it instead of crashing the client
+                  error = true;
+                  RendererLoader.log.info(msg);
+                  RendererLoader.log.info("Unable to load " + name + ':' + le + '!');
                 }
               }
             }

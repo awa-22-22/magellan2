@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>magellan</groupId>
+  <artifactId>magellan2</artifactId>
+  <version>2.1.2</version>
+  <packaging>jar</packaging>
+
+  <name>Magellan 2</name>
+  <description>Magellan is a client for the Eressea play-by-email game.</description>
+  <url>https://magellan2.github.io</url>
+
+  <properties>
+    <!-- same settings as build.xml -->
+    <maven.compiler.release>11</maven.compiler.release>
+    <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+  </properties>
+
+  <!--
+    The project has no external repository dependencies for compilation; all
+    libraries are shipped as local jars in lib/ (mirrors the Eclipse
+    .classpath / build.xml), so they are referenced with system scope.
+
+    Test dependencies (junit, hamcrest) are taken from Maven Central instead
+    of lib/internal so that surefire correctly detects the JUnit 4 provider
+    (it does not recognize system-scoped junit artifacts).
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>activation</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/activation.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>ant</artifactId>
+      <version>1.7.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/ant-1.7.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>commons-beanutils-core</artifactId>
+      <version>1.8.3</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-beanutils-core-1.8.3.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.14</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-codec-1.14.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>commons-email</artifactId>
+      <version>1.5</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-email-1.5.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>3.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-httpclient-3.1.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.2</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-logging-1.2.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>idw-gpl</artifactId>
+      <version>1.6.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/idw-gpl-1.6.1.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.11.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jackson-annotations-2.11.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.11.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jackson-core-2.11.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.11.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jackson-databind-2.11.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>javahelp</artifactId>
+      <version>2.0.05</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/javahelp-2.0.05.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>javax.mail</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/javax.mail.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>jfreechart</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jfreechart.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>jimi</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/jimi.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>macify</artifactId>
+      <version>1.4</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/macify-1.4.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>multiline-label</artifactId>
+      <version>1.18</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/multiline-label-1.18.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>kunststoff</artifactId>
+      <version>2.0.2</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/skins/kunststoff-2_0_2.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>liquidlnf</artifactId>
+      <version>2.9.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/skins/liquidlnf-2.9.1.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>looks</artifactId>
+      <version>1.3b1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/skins/looks-1.3b1.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>skinsCollected</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/skins/skinsCollected.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>magellan.local</groupId>
+      <artifactId>xplookandfeel</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/skins/xplookandfeel.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+      <version>1.3</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- register the Eclipse source folders -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src-library</source>
+                <source>src-client</source>
+                <source>src-plugins</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-test-source</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src-test</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <argLine>-Djava.awt.headless=true</argLine>
+          <excludes>
+            <!-- not part of the release, same as build.xml -->
+            <exclude>**/E3CommandParserTest.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!--
+        Build the fat jar. The maven-shade-plugin cannot merge system-scoped
+        dependencies, so this uses an Ant jar task: the compiled classes plus
+        the unpacked contents of all lib jars are merged into one executable
+        jar (first occurrence of a duplicate entry wins). The merge order
+        follows the Class-Path of etc/manifest.mf.template, so the fat jar
+        resolves the same class versions as the classic Ant release. It
+        replaces the thin jar produced by maven-jar-plugin.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>build-fat-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <jar destfile="${project.build.directory}/${project.build.finalName}.jar"
+                     duplicate="preserve">
+                  <fileset dir="${project.build.outputDirectory}" />
+                  <!--
+                    The jars are merged in the classpath order of
+                    etc/manifest.mf.template (the order used by the classic Ant
+                    release); the first occurrence of a duplicate entry wins.
+                    All entries are zipfilesets because Ant processes
+                    zipgroupfilesets after zipfilesets regardless of document
+                    order, which would break the intended precedence.
+                    (jimi and macify are not in the manifest's Class-Path, but
+                    are bundled here like in the classic release's lib folder.)
+                  -->
+                  <!-- the signed activation.jar is added without its signature
+                       files (they would be invalid in the merged jar) -->
+                  <zipfileset src="${project.basedir}/lib/activation.jar"
+                              excludes="META-INF/*.SF META-INF/*.RSA META-INF/*.DSA" />
+                  <zipfileset src="${project.basedir}/lib/ant-1.7.0.jar" />
+                  <zipfileset src="${project.basedir}/lib/commons-beanutils-core-1.8.3.jar" />
+                  <zipfileset src="${project.basedir}/lib/commons-codec-1.14.jar" />
+                  <zipfileset src="${project.basedir}/lib/commons-email-1.5.jar" />
+                  <zipfileset src="${project.basedir}/lib/commons-httpclient-3.1.jar" />
+                  <zipfileset src="${project.basedir}/lib/commons-logging-1.2.jar" />
+                  <zipfileset src="${project.basedir}/lib/idw-gpl-1.6.1.jar" />
+                  <zipfileset src="${project.basedir}/lib/jackson-annotations-2.11.0.jar" />
+                  <zipfileset src="${project.basedir}/lib/jackson-core-2.11.0.jar" />
+                  <zipfileset src="${project.basedir}/lib/jackson-databind-2.11.0.jar" />
+                  <zipfileset src="${project.basedir}/lib/javahelp-2.0.05.jar" />
+                  <zipfileset src="${project.basedir}/lib/javax.mail.jar" />
+                  <zipfileset src="${project.basedir}/lib/jfreechart.jar" />
+                  <zipfileset src="${project.basedir}/lib/jimi.jar" />
+                  <zipfileset src="${project.basedir}/lib/macify-1.4.jar" />
+                  <zipfileset src="${project.basedir}/lib/multiline-label-1.18.jar" />
+                  <zipfileset src="${project.basedir}/lib/skins/kunststoff-2_0_2.jar" />
+                  <zipfileset src="${project.basedir}/lib/skins/liquidlnf-2.9.1.jar" />
+                  <zipfileset src="${project.basedir}/lib/skins/looks-1.3b1.jar" />
+                  <!-- skinsCollected bundles a newer JGoodies Looks (2.x) whose
+                       WindowsMenuItemRenderer cannot extend the final
+                       MenuItemRenderer of the winning looks-1.3b1 classes; the
+                       class is unusable in this classpath layout, so exclude it
+                       (the RendererLoader would otherwise try to load it) -->
+                  <zipfileset src="${project.basedir}/lib/skins/skinsCollected.jar"
+                              excludes="com/jgoodies/looks/windows/WindowsMenuItemRenderer*.class" />
+                  <zipfileset src="${project.basedir}/lib/skins/xplookandfeel.jar" />
+                  <manifest>
+                    <attribute name="Main-Class" value="magellan.client.Client" />
+                    <attribute name="Specification-Title"
+                               value="Magellan Client ${project.version}" />
+                    <attribute name="Specification-Vendor"
+                               value="Magellan Development Team" />
+                  </manifest>
+                </jar>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

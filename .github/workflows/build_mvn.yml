@@ -1,0 +1,28 @@
+name: "Run tests and build with Maven on any branch"
+
+on:
+  push:
+    branches:
+    - "master"
+
+jobs:
+  build:
+    name: "Test and Build with Maven"
+    runs-on: ubuntu-latest
+    continue-on-error: false
+
+    steps:
+    - name: "Checkout repository"
+      uses: actions/checkout@v4
+      with:
+        fetch-tags: true
+        fetch-depth: 0
+
+    - name: "Set up JDK 11"
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: 11
+
+    - name: "Build binaries with mvn"
+      run: mvn package

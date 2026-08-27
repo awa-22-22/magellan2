@@ -8,6 +8,7 @@ help/de/JavaHelpSearch
 test/junit
 /cacerts
 /classes
+/target
 /extendedcommands.xml
 /magellan-src.jar
 /release
