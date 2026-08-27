@@ -3,7 +3,7 @@ name: "Run tests and build with Maven on any branch"
 on:
   push:
     branches:
-	- "maven-build"
+    - "maven-build"
 
 jobs:
   build:
