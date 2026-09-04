@@ -26,10 +26,10 @@ jobs:
 
     - name: "Build binaries with mvn"
       run: mvn package
-	  
+      
     - name: "Upload artifact"
-	  uses: actions/upload-artifact@v4
-	  with:
-	    name: fat-jar       # name shown in the Actions UI
-	    path: target/magellan*.jar  # file, folder, or glob pattern to upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: fat-jar       # name shown in the Actions UI
+        path: target/magellan*.jar  # file, folder, or glob pattern to upload
         overwrite: true
