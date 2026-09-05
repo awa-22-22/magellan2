@@ -334,6 +334,34 @@
           </execution>
         </executions>
       </plugin>
+
+      <!--
+        Assemble the runnable distribution zip (fat jar + etc/ + doc/ +
+        start scripts), mirroring the Ant copy_release_data/zip_release
+        targets. Declared after the antrun execution above so the fat jar
+        already exists when this runs (both are bound to the package phase;
+        same-phase executions run in declaration order).
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <executions>
+          <execution>
+            <id>build-dist-zip</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>${project.basedir}/src/assembly/dist.xml</descriptor>
+              </descriptors>
+              <appendAssemblyId>true</appendAssemblyId>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>

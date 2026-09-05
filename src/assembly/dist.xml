@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Assembles a runnable Magellan distribution zip, mirroring the Ant
+  copy_release_data/zip_release targets: the fat jar plus the runtime data
+  files it reads from the working directory (etc/*.properties, etc/*.ini,
+  etc/images, etc/rules, etc/plugins), the top-level docs, and start scripts.
+
+  Not included yet (see mavenbuild.md "Not yet covered"): the JavaHelp
+  jar (help/, built by the separate build_help/index_help Ant targets) and
+  etc/names (not part of the classic release/ layout either).
+-->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
+  <id>dist</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <baseDirectory>magellan2-${project.version}</baseDirectory>
+
+  <files>
+    <!-- the fat jar built by the antrun execution earlier in the package phase -->
+    <file>
+      <source>${project.build.directory}/${project.build.finalName}.jar</source>
+      <outputDirectory>/</outputDirectory>
+      <destName>${project.build.finalName}.jar</destName>
+    </file>
+    <!-- external plugins folder marker, as created by copy_release_data -->
+    <file>
+      <source>${project.basedir}/installer/plugins-readme.txt</source>
+      <outputDirectory>plugins</outputDirectory>
+      <destName>README.txt</destName>
+    </file>
+  </files>
+
+  <fileSets>
+    <!-- top-level readme/license files, same set as copy_release_data -->
+    <fileSet>
+      <directory>${project.basedir}</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>CHANGELOG.txt</include>
+        <include>COPYING.txt</include>
+        <include>LICENSE.txt</include>
+        <include>README.md</include>
+        <include>RELEASENOTES.txt</include>
+      </includes>
+    </fileSet>
+
+    <!-- start scripts -->
+    <fileSet>
+      <directory>${project.basedir}/src/main/scripts</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>magellan.sh</include>
+      </includes>
+      <fileMode>0755</fileMode>
+      <lineEnding>unix</lineEnding>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/src/main/scripts</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>magellan.bat</include>
+      </includes>
+      <lineEnding>windows</lineEnding>
+    </fileSet>
+
+    <!-- runtime data read from the working directory, as in copy_release_data -->
+    <fileSet>
+      <directory>${project.basedir}/etc</directory>
+      <outputDirectory>etc</outputDirectory>
+      <includes>
+        <include>*.properties</include>
+        <include>*.ini</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/etc/images</directory>
+      <outputDirectory>etc/images</outputDirectory>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/etc/rules</directory>
+      <outputDirectory>etc/rules</outputDirectory>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/etc/plugins</directory>
+      <outputDirectory>etc/plugins</outputDirectory>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.basedir}/doc</directory>
+      <outputDirectory>doc</outputDirectory>
+    </fileSet>
+  </fileSets>
+</assembly>
