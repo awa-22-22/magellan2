@@ -18,7 +18,7 @@ jobs:
         fetch-tags: true
         fetch-depth: 0
     - name: Run Kilo 1
-      uses: Kilo-Org/kilocode/github@latest
+      uses: Kilo-Org/kilocode/github@v7.4.23
       with:
         model: kilo/claude-sonnet-4-20250514
         kilo_api_key: ${{ secrets.KILO_API_KEY_1 }}
