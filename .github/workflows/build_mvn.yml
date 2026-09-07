@@ -17,7 +17,7 @@ jobs:
       with:
         fetch-tags: true
         fetch-depth: 0
-    - name: Run Kilo
+    - name: Run Kilo 1
       uses: Kilo-Org/kilocode/github@latest
       with:
         model: kilo/claude-sonnet-4-20250514
