@@ -1362,6 +1362,7 @@ public class Client extends JFrame implements ShortcutListener, PreferencesFacto
    * START &amp; END Code
    */
   public static void main(String args[]) {
+
     try {
       /* set the stderr to stdout while there is no log attached */
       System.setErr(System.out);
@@ -1380,7 +1381,7 @@ public class Client extends JFrame implements ShortcutListener, PreferencesFacto
       parameters.binDir = MagellanFinder.findMagellanDirectory();
 
       if (parameters.resourceDir == null) {
-        parameters.resourceDir = parameters.binDir;
+        parameters.resourceDir = new File(".").getAbsoluteFile();
       }
       parameters.settingsDir = MagellanFinder.findSettingsDirectory(parameters.resourceDir,
           parameters.settingsDir);
