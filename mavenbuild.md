@@ -114,8 +114,10 @@ java -jar target/magellan2-2.1.2.jar -d /path/to/magellan2
 The Maven build currently covers the *compile → test → package* part of the
 Ant build and nothing else. Both builds can coexist: Maven writes only to
 `target/` and does not touch the Ant output directories (`classes/`,
-`release/`, `macos/`). To replace Ant completely one day, the pieces listed
-in the second table below still have to be migrated.
+`release/`, `macos/`). To retire Ant (`build.xml`) entirely, the gaps in the
+"Remaining gaps" table below still have to be closed; the installer/Javadoc/
+source-jar targets in "Explicitly out of scope" will simply be dropped, not
+migrated.
 
 ### Covered by Maven
 
@@ -128,17 +130,20 @@ in the second table below still have to be migrated.
 | `clear-all` | `mvn clean` (cleans only `target/`) |
 | `copy_release_data` (partially), `zip_release` | `maven-assembly-plugin` with `src/assembly/dist.xml` — produces `target/magellan2-2.1.2-dist.zip` (fat jar, `etc/`, `doc/`, readme files, start scripts). Missing vs. Ant: `lib/` (not needed, contents are inside the fat jar), the JavaHelp jar, and the templated `etc/VERSION` |
 
-### Not yet covered (needed for a complete Ant replacement)
+### Remaining gaps (TODO, needed to retire Ant)
 
-| Ant target | What it does | Possible Maven approach |
-|---|---|---|
-| `increase_build_number`, `update_version`, `print_version` | increments `.build.number`, filters `etc/VERSION.template` into `etc/VERSION` and `VERSION` | `buildnumber-maven-plugin` + resource filtering; the version is currently fixed in the pom |
-| `build_help`, `index_help` | runs the JavaHelp `Indexer` for `help/de` and `help/en`, packs `magellan-help.jar` | `maven-antrun-plugin` (`java` task) or `exec-maven-plugin`; also needs adding to the dist assembly |
-| `build_jar_and_distribute` (IzPack part) | filters `installer/izpack-install.template.xml` and runs the IzPack `standalone-compiler.jar` | `maven-antrun-plugin` or `exec-maven-plugin` |
-| `installer4j`, `distribute_install4j` | builds the install4j installers (requires the `INSTALL4J_KEY` environment variable) | `com.install4j:install4j-maven-plugin` |
-| macOS bundle part of `build_jar_and_distribute` | assembles `macos/Magellan.app` | `maven-assembly-plugin` or antrun |
-| `doc` | source jar + Javadoc (locale `de_DE`, ISO-8859-1, excludes `src-test` and `installer`) | `maven-source-plugin`, `maven-javadoc-plugin` |
-| manifest templating (`etc/manifest.mf.template`) | versioned manifest with build number and user | `maven-jar-plugin` manifest entries |
+| Status | Ant target | What it does | Possible Maven approach |
+|---|---|---|---|
+| TODO | `increase_build_number`, `update_version`, `print_version` | increments `.build.number`, filters `etc/VERSION.template` into `etc/VERSION` and `VERSION` | `buildnumber-maven-plugin` + resource filtering; the version is currently fixed in the pom |
+| TODO | `build_help`, `index_help` | runs the JavaHelp `Indexer` for `help/de` and `help/en`, packs `magellan-help.jar` | `maven-antrun-plugin` (`java` task) or `exec-maven-plugin`; also needs adding to the dist assembly |
+| TODO | manifest templating (`etc/manifest.mf.template`) | versioned manifest with build number and user | `maven-jar-plugin` manifest entries |
+
+### Explicitly out of scope
+
+Magellan is a standalone end-user application, not a library other Maven projects depend on, so the following Ant targets are intentionally **not** being migrated:
+
+- `build_jar_and_distribute` (IzPack part), `installer4j`, `distribute_install4j`, and the macOS bundle part of `build_jar_and_distribute` — native installers (IzPack / Install4J / macOS `.app` bundle). The distribution zip produced by `mvn package` is the supported way to obtain a runnable copy.
+- `doc` — source jar + Javadoc. There are no downstream consumers to attach sources or Javadoc to.
 
 ### Intentional differences
 
@@ -158,7 +163,8 @@ in the second table below still have to be migrated.
 
 - `mvn clean` removes the `target/` directory. `target/` is listed in
   `.gitignore`.
-- The Maven build intentionally does not create installers (IzPack /
-  install4j), Javadoc, or the source jar — use `build.xml` for those (see the
-  table above). It does create a runnable distribution zip (see "Running"
-  above), just not the JavaHelp jar bundled inside the Ant one.
+- The Maven build intentionally does not, and will not, create installers
+  (IzPack / install4j), Javadoc, or the source jar (see "Explicitly out of
+  scope" above). It does create a runnable distribution zip (see "Running"
+  above), just not the JavaHelp jar bundled inside the Ant one yet (TODO,
+  see "Remaining gaps" above).
