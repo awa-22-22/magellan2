@@ -11,3 +11,7 @@ encoding//etc/resources.properties=ISO-8859-1
 encoding//etc/resources_de.properties=ISO-8859-1
 encoding//help/de/pagelist.txt=UTF-8
 encoding/<project>=ISO-8859-1
+encoding/src-client=ISO-8859-1
+encoding/src-library=ISO-8859-1
+encoding/src-plugins=ISO-8859-1
+encoding/src-test=ISO-8859-1
