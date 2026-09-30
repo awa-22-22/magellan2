@@ -4,6 +4,9 @@ on:
   push:
     branches:
     - "maven-build"
+    
+env:
+    PUSH_TS: ${{ github.event.created_at}}
 
 jobs:
   build:
@@ -29,6 +32,6 @@ jobs:
     - name: "Upload artifact"
       uses: actions/upload-artifact@v4
       with:
-        name: fat-zip       # name shown in the Actions UI and the name of the artefact itself + .zip!
+        name: magellan-zip_${{env.PUSH_TS}}       # name shown in the Actions UI and the name of the artefact itself + .zip!
         path: target/magellan*.zip  # file, folder, or glob pattern to upload
         overwrite: true
