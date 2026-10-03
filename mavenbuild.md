@@ -32,8 +32,9 @@ mvn package -DskipTests
 
 ## Running
 
-Magellan reads its configuration and data files (`etc/`, `help/`) from the
-working directory at runtime — only the classpath is bundled into the jar.
+Magellan reads its configuration and data files (`etc/`) from the
+working directory at runtime — only the classpath and the help (see below)
+are bundled into the jar.
 The jar alone is therefore **not standalone**: running
 `java -jar target/magellan2-2.1.2.jar` only works if an `etc/` directory
 happens to be reachable from the current directory (e.g. the project root,
@@ -104,10 +105,15 @@ java -jar target/magellan2-2.1.2.jar -d /path/to/magellan2
   (`src/main/scripts/magellan.sh` / `.bat`, new for the Maven build — the
   Ant `installer/*.sh`/`.bat` scripts point at the install4j launcher and
   the classic four-jar layout, so they don't fit the Maven fat jar). Not
-  included: the JavaHelp jar (`help/`, built by the separate
-  `build_help`/`index_help` Ant targets, not yet migrated) and `etc/names`
-  (used by the name generator but, like `help/`, not part of the classic
-  `release/` layout produced by `copy_release_data` either).
+  included: `etc/names` (used by the name generator but not part of the
+  classic `release/` layout produced by `copy_release_data` either).
+- **Help**: the JavaHelp sets (`help/de`, `help/en`) are bundled inside the
+  fat jar under the `help/` prefix, where `Help.java` finds them via the
+  classloader. An `index-help` antrun execution (`prepare-package`) copies
+  `help/` to `target/help` and runs the JavaHelp `Indexer` there for both
+  languages (same as Ant's `index_help`), so the gitignored
+  `JavaHelpSearch/` indexes are generated during the build and the source
+  tree stays untouched.
 
 ## Relation to the Ant build (`build.xml`)
 
@@ -128,14 +134,14 @@ migrated.
 | `run_tests` | `mvn test` (Surefire; `E3CommandParserTest` excluded as well) |
 | `build_library_jar`, `build_client_jar`, `build_plugins_jar` | `mvn package` — single fat jar instead of `magellan-library/client/plugins.jar` plus the `lib/` folder |
 | `clear-all` | `mvn clean` (cleans only `target/`) |
-| `copy_release_data` (partially), `zip_release` | `maven-assembly-plugin` with `src/assembly/dist.xml` — produces `target/magellan2-2.1.2-dist.zip` (fat jar, `etc/`, `doc/`, readme files, start scripts). Missing vs. Ant: `lib/` (not needed, contents are inside the fat jar), the JavaHelp jar, and the templated `etc/VERSION` |
+| `copy_release_data` (partially), `zip_release` | `maven-assembly-plugin` with `src/assembly/dist.xml` — produces `target/magellan2-2.1.2-dist.zip` (fat jar, `etc/`, `doc/`, readme files, start scripts). Missing vs. Ant: `lib/` (not needed, contents are inside the fat jar) and the templated `etc/VERSION` |
+| `build_help`, `index_help` | `maven-antrun-plugin` execution `index-help` (runs the `Indexer` on a copy in `target/help`); the result is merged into the fat jar instead of a separate `magellan-help.jar` |
 
 ### Remaining gaps (TODO, needed to retire Ant)
 
 | Status | Ant target | What it does | Possible Maven approach |
 |---|---|---|---|
 | TODO | `increase_build_number`, `update_version`, `print_version` | increments `.build.number`, filters `etc/VERSION.template` into `etc/VERSION` and `VERSION` | `buildnumber-maven-plugin` + resource filtering; the version is currently fixed in the pom |
-| TODO | `build_help`, `index_help` | runs the JavaHelp `Indexer` for `help/de` and `help/en`, packs `magellan-help.jar` | `maven-antrun-plugin` (`java` task) or `exec-maven-plugin`; also needs adding to the dist assembly |
 | TODO | manifest templating (`etc/manifest.mf.template`) | versioned manifest with build number and user | `maven-jar-plugin` manifest entries |
 
 ### Explicitly out of scope
@@ -149,8 +155,8 @@ Magellan is a standalone end-user application, not a library other Maven project
 
 - **One fat jar vs. four jars plus lib folder**: Ant ships
   `magellan-library.jar`, `magellan-client.jar`, `magellan-plugins.jar` and
-  `magellan-help.jar` together with `lib/*.jar`; Maven merges everything into
-  a single executable jar. If the classic layout is ever wanted back, the
+  `magellan-help.jar` together with `lib/*.jar`; Maven merges everything
+  (including the help) into a single executable jar. If the classic layout is ever wanted back, the
   project would have to be split into Maven modules (`library`, `client`,
   `plugins`) — a much bigger refactoring.
 - **Version handling**: Ant composes the version from `VERSION.MAJOR/MINOR/SUB`
@@ -166,5 +172,4 @@ Magellan is a standalone end-user application, not a library other Maven project
 - The Maven build intentionally does not, and will not, create installers
   (IzPack / install4j), Javadoc, or the source jar (see "Explicitly out of
   scope" above). It does create a runnable distribution zip (see "Running"
-  above), just not the JavaHelp jar bundled inside the Ant one yet (TODO,
-  see "Remaining gaps" above).
+  above).
